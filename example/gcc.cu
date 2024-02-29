@@ -57,6 +57,8 @@ int main(int argc, char** argv) {
         &nvals, directed, mtxinfo, &dat_name);
   }
 
+  
+
   // Descriptor desc
   graphblas::Descriptor desc;
   CHECK(desc.loadArgs(vm));
@@ -74,17 +76,24 @@ int main(int argc, char** argv) {
   CHECK(A.nvals(&nvals));
   if (debug) CHECK(A.print());
 
+  std::cout << "read data done !" << std::endl;
+
   // Vector v
   graphblas::Vector<int> v(nrows);
 
   // Cpu connected components.
-  CpuTimer cc_cpu;
-  std::vector<int> h_cc_cpu(nrows, 0);
-  int depth = 10000;
-  cc_cpu.Start();
-  int d = graphblas::algorithm::ccCpu(seed, &A, &h_cc_cpu);
-  cc_cpu.Stop();
-  graphblas::algorithm::verifyCc(&A, h_cc_cpu, /*suppress_zero=*/true);
+  // CpuTimer cc_cpu;
+  // std::vector<int> h_cc_cpu(nrows, 0);
+  // int depth = 10000;
+  // std::cout << "1" << std::endl;
+  // cc_cpu.Start();
+  // int d = graphblas::algorithm::ccCpu(seed, &A, &h_cc_cpu);
+  // cc_cpu.Stop();
+  // std::cout << "cc done" << std::endl;
+
+  // graphblas::algorithm::verifyCc(&A, h_cc_cpu, /*suppress_zero=*/true);
+
+  std::cout << "cpu computation done !" << std::endl;
 
   // Warmup
   CpuTimer warmup;
@@ -101,11 +110,13 @@ int main(int argc, char** argv) {
     std::cout << "Error: Invalid connected components algorithm selected!\n";
   }
   warmup.Stop();
+  std::cout << "warm up done !" << std::endl;
 
-  std::vector<int> h_cc_gpu;
-  CHECK(v.extractTuples(&h_cc_gpu, &nrows));
-  graphblas::algorithm::verifyCc(&A, h_cc_gpu, /*suppress_zero=*/true);
+  // std::vector<int> h_cc_gpu;
+  // CHECK(v.extractTuples(&h_cc_gpu, &nrows));
+  // graphblas::algorithm::verifyCc(&A, h_cc_gpu, /*suppress_zero=*/true);
 
+  std::cout << "started gpu computation" << std::endl;
   // Benchmark
   graphblas::Vector<int> y(nrows);
   CpuTimer vxm_gpu;
@@ -130,19 +141,21 @@ int main(int argc, char** argv) {
   }
   // cudaProfilerStop();
   vxm_gpu.Stop();
+  std::cout << "gpu computation done !" << std::endl;
 
   float flop = 0;
-  std::cout << "cpu, " << cc_cpu.ElapsedMillis() << ", \n";
+  // std::cout << "cpu, " << cc_cpu.ElapsedMillis() << ", \n";
   std::cout << "warmup, " << warmup.ElapsedMillis() << ", " <<
     flop/warmup.ElapsedMillis()/1000000.0 << "\n";
   float elapsed_vxm = vxm_gpu.ElapsedMillis();
+  std::cout << "all tight, " << tight << "\n";
   std::cout << "tight, " << tight/niter << "\n";
   std::cout << "vxm, " << elapsed_vxm/niter << "\n";
 
-  if (niter) {
-    std::vector<int> h_cc_gpu2;
-    graphblas::algorithm::verifyCc(&A, h_cc_gpu, /*suppress_zero=*/true);
-  }
+  // if (niter) {
+  //   std::vector<int> h_cc_gpu2;
+  //   graphblas::algorithm::verifyCc(&A, h_cc_gpu, /*suppress_zero=*/true);
+  // }
 
   return 0;
 }
